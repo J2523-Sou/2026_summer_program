@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TrackingView: View {
     
-    let onFinish: () -> Void
+    let onFinish: ([SIMD3<Float>]) -> Void
     
     @StateObject private var tracker = ARTrackingManager()
     
@@ -51,7 +51,8 @@ struct TrackingView: View {
             }
             
             Button("FINISH") {
-                onFinish()
+                tracker.stopRecording()
+                onFinish(tracker.trajectory)
             }
         }
         .onAppear {
@@ -64,7 +65,7 @@ struct TrackingView: View {
 }
 
 #Preview {
-    TrackingView {
-        print("FINISH")
+    TrackingView { points in
+        print(points.count)
     }
 }

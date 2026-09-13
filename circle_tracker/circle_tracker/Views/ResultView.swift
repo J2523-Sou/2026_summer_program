@@ -11,6 +11,8 @@ struct ResultView: View {
     
     //呼び出し時，外部から得点データを受け取る．
     let score: Int
+    let trajectory: [SIMD3<Float>]
+    
     let onRetry: () -> Void
     let onHome: () -> Void
     
@@ -24,7 +26,7 @@ struct ResultView: View {
                 .font(.system(size: 80))
                 .bold()
             
-            Text("points")
+            Text("points: \(trajectory.count)")
                 .font(.headline)
             
             Button("RETRY") {
@@ -42,6 +44,10 @@ struct ResultView: View {
 #Preview {
     ResultView(
         score: 85,
+        trajectory: [
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.1, 0.1, 0)
+        ],
         onRetry: {
             print("RETRY")
         },

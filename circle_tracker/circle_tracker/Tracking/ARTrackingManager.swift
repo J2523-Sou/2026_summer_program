@@ -22,6 +22,7 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     @Published var relativeZ: Float = 0
     @Published var isRecording: Bool = false
     @Published var recordedPointCount: Int = 0
+    @Published private(set) var trajectory: [SIMD3<Float>] = []             // 軌跡
 
     
     private let session = ARSession()
@@ -33,7 +34,6 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     private var calibrationPositions: [SIMD3<Float>] = []   // 静止中の座標（配列として全て保存）
     private var origin: SIMD3<Float>?                       // 補正後の原点
     private var calibrationCompleted = false
-    private var trajectory: [SIMD3<Float>] = []             // 軌跡
     
     override init() {
         super.init()
