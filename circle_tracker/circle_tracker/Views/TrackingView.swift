@@ -25,6 +25,19 @@ struct TrackingView: View {
             Text(String(format: "Speed: %.4f m/s", tracker.speed))
             Text(tracker.isStill ? "静止中" : "移動中")
             
+            if tracker.isCalibrated {
+                Text("原点設定完了")
+                
+                Text(String(format: "X: %.3f m", tracker.relativeX))
+                Text(String(format: "Y: %.3f m", tracker.relativeY))
+                Text(String(format: "Z: %.3f m", tracker.relativeZ))
+
+            } else {
+                Text("3秒間静止してください")
+                
+                ProgressView(value: tracker.calibrationProgress)
+            }
+            
             Button("FINISH") {
                 onFinish()
             }
