@@ -20,6 +20,8 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     @Published var relativeX: Float = 0
     @Published var relativeY: Float = 0
     @Published var relativeZ: Float = 0
+    @Published var isRecording: Bool = false
+    @Published var recordedPointCount: Int = 0
 
     
     private let session = ARSession()
@@ -31,6 +33,7 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     private var calibrationPositions: [SIMD3<Float>] = []   // 静止中の座標（配列として全て保存）
     private var origin: SIMD3<Float>?                       // 補正後の原点
     private var calibrationCompleted = false
+    private var trajectory: [SIMD3<Float>] = []             // 軌跡
     
     override init() {
         super.init()
@@ -68,6 +71,21 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
             self.calibrationProgress = 1.0
             self.isCalibrated = true
         }
+    }
+    
+    func startRecording() {
+        
+        trajectory.removeAll()
+        
+        isRecording = true
+        recordedPointCount = 0
+        
+    }
+    
+    func stopRecording() {
+        
+        isRecording = false
+        
     }
     
     // 主処理
@@ -147,6 +165,14 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
         // 補正後の座標を保存
         if let origin = origin {
             let relativePosition = currentPosition - origin
+            
+            if isRecording {
+                trajectory.append(relativePosition)
+                
+                DispatchQueue.main.async {
+                    self.recordedPointCount = self.trajectory.count
+                }
+            }
             
             DispatchQueue.main.async {
                 self.relativeX = relativePosition.x

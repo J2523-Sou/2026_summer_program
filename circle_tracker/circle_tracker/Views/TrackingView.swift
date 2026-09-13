@@ -38,6 +38,18 @@ struct TrackingView: View {
                 ProgressView(value: tracker.calibrationProgress)
             }
             
+            Text("Points: \(tracker.recordedPointCount)")
+            
+            if tracker.isRecording {
+                Button("STOP RECORDING") {
+                    tracker.stopRecording()
+                }
+            } else {
+                Button("RECORD") {
+                    tracker.startRecording()
+                }
+            }
+            
             Button("FINISH") {
                 onFinish()
             }
