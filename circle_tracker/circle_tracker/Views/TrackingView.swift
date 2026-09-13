@@ -11,13 +11,27 @@ struct TrackingView: View {
     
     let onFinish: () -> Void
     
+    @StateObject private var tracker = ARTrackingManager()
+    
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 20) {
+            
             Text("Tracking")
                 .font(.largeTitle)
+            
+            Text("X: \(tracker.x)")
+            Text("Y: \(tracker.y)")
+            Text("Z: \(tracker.z)")
+            
             Button("FINISH") {
                 onFinish()
             }
+        }
+        .onAppear {
+            tracker.start()
+        }
+        .onDisappear {
+            tracker.stop()
         }
     }
 }
