@@ -1,0 +1,12 @@
+.DS_Store
+
+xcuserdata/
+*.xcuserstate
+
+build/
+DerivedData/
+
+.build/
+
+# Backup of the former nested repository
+circle_tracker/.git-backup/
