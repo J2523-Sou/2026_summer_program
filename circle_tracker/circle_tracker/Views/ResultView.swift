@@ -29,6 +29,9 @@ struct ResultView: View {
             Text("points: \(trajectory.count)")
                 .font(.headline)
             
+            Trajectory3DView(points: trajectory)
+                .frame(height: 350)
+            
             Button("RETRY") {
                 onRetry()
             }

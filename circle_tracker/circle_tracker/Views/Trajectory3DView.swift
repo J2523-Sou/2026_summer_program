@@ -31,6 +31,7 @@ struct Trajectory3DView: View {
                 
             }
             
+            root.scale = [3, 3, 3]
             root.position = [0, 0, -1]
             
             content.add(root)
