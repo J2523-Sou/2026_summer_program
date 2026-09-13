@@ -23,6 +23,7 @@ struct TrackingView: View {
             Text("Y: \(tracker.y)")
             Text("Z: \(tracker.z)")
             Text(String(format: "Speed: %.4f m/s", tracker.speed))
+            Text(tracker.isStill ? "静止中" : "移動中")
             
             Button("FINISH") {
                 onFinish()

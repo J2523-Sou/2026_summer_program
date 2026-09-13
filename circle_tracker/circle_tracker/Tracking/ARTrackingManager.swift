@@ -12,12 +12,14 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     
     @Published var x: Float = 0
     @Published var y: Float = 0
-    @Published var z: Float = 0         // 座標データ3つ
-    @Published var speed: Float = 0     // 移動速度
+    @Published var z: Float = 0             // 座標データ3つ
+    @Published var speed: Float = 0         // 移動速度
+    @Published var isStill: Bool = false    //動作中フラグ
     
     private let session = ARSession()
     private var previousPosition: SIMD3<Float>?     // 1フレーム前の距離
     private var previousTimestamp: TimeInterval?    // 1フレーム前の時刻
+    private let stillnessThreshold: Float = 0.25    // 動作検出閾値
     
     override init() {
         super.init()
@@ -63,8 +65,12 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
             if deltaTime > 0 {
                 let currentSpeed = distance / Float(deltaTime)
                 
+                // 動いているか？
+                let currentIsStill = currentSpeed < stillnessThreshold
+                
                 DispatchQueue.main.async {
                     self.speed = currentSpeed
+                    self.isStill = currentIsStill
                 }
             }
         }
