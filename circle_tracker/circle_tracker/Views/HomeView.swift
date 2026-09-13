@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  HomeView.swift
 //  circle_tracker
 //
 //  Created by 髙橋湊 on 9/13/26.
@@ -7,18 +7,22 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct HomeView: View {
+    
+    //引数なし，戻り値なしの処理を外部から受け取る
+    let onStart: () -> Void
+    
     var body: some View {
         VStack {
             Text("Perfect Circle")
                 .font(.largeTitle)
                 .bold()
-            
+                
             Text("できるだけ綺麗な円を描こう")
                 .font(.headline)
-            
+                
             Button("START") {
-                print("START button pressed")
+                onStart()
             }
         }
         .padding()
@@ -26,5 +30,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    HomeView() {
+        print("START")
+    }
 }
