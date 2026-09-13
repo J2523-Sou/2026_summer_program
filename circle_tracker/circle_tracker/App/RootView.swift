@@ -9,21 +9,27 @@ import SwiftUI
 
 struct RootView: View {
     
+    // 起動時の画面をhomeに設定．
     @State private var gameState: GameState = .home
     
     var body: some View {
         switch gameState {
-            
+        
+        // homeにてonStartが渡された場合の処理
+        // trackingへ移動する
         case .home:
             HomeView {
                 gameState = .tracking
             }
-            
+        
+        // trackingにてonFinishが渡された場合の処理
+        // resultへ移動する
         case .tracking:
             TrackingView {
                 gameState = .result
             }
             
+        // resultでの処理
         case .result:
             ResultView(
                 score: 85,

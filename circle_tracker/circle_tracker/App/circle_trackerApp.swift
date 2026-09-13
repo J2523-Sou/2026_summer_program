@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// 最初にRootViewを呼び出す
 @main
 struct circle_trackerApp: App {
     var body: some Scene {
