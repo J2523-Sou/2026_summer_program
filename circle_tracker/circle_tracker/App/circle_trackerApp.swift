@@ -11,7 +11,7 @@ import SwiftUI
 struct circle_trackerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }
