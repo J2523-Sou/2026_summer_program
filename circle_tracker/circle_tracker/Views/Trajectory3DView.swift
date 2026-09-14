@@ -7,6 +7,7 @@
 
 import SwiftUI
 import RealityKit
+import simd
 
 struct Trajectory3DView: View {
     
@@ -45,7 +46,7 @@ struct Trajectory3DView: View {
             
             content.add(root)
             
-        } update: { content in
+        } update: { content in          // 3D領域の更新処理
             
             if let root = content.entities.first(
                 where: {$0.name == "trajectoryRoot"}
@@ -67,6 +68,7 @@ struct Trajectory3DView: View {
             
         }
         
+        // ユーザ操作部分
         .contentShape(Rectangle())
         .gesture(
             DragGesture()
