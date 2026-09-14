@@ -3,12 +3,21 @@ import simd
 
 struct CircleAnalyzer {
     
-    static func calculateScore(
+    static func analyze(
         points: [SIMD3<Float>]
-    ) -> Int {
+    ) -> CircleAnalysisResult {
+        
+        func failedResult() -> CircleAnalysisResult {
+            CircleAnalysisResult(
+                score: 0,
+                aspectScore: 0,
+                radialError: 0,
+                pointCount: points.count
+            )
+        }
         
         guard points.count >= 10 else {
-            return 0
+            return failedResult()
         }
         
         // 各軸の範囲
@@ -67,7 +76,7 @@ struct CircleAnalyzer {
         
         guard width > 0,
               height > 0 else {
-            return 0
+            return failedResult()
         }
         
         // Bounding Boxの中心
@@ -94,7 +103,7 @@ struct CircleAnalyzer {
         / Float(radii.count)
         
         guard meanRadius > 0 else {
-            return 0
+            return failedResult()
         }
         
         // 半径の平均絶対誤差
@@ -134,8 +143,11 @@ struct CircleAnalyzer {
         print("radialError:", radialError)
         print("score:", score)
         
-        return Int(
-            max(0, min(100, score))
+        return CircleAnalysisResult(
+            score: Int(max(0, min(100, score))),
+            aspectScore: aspectScore,
+            radialError: radialError,
+            pointCount: points.count
         )
     }
 }
