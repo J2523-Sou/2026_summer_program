@@ -12,6 +12,7 @@ struct RootView: View {
     // 起動時の画面をhomeに設定．
     @State private var gameState: GameState = .home
     @State private var trajectory: [SIMD3<Float>] = []
+    @State private var score: Int = 0
     
     // 各Viewを呼び出し
     var body: some View {
@@ -31,13 +32,18 @@ struct RootView: View {
         case .tracking:
             TrackingView { points in
                 trajectory = points
+                
+                score = CircleAnalyzer.calculateScore(
+                    points: points
+                )
+                
                 gameState = .result
             }
             
         // resultでの処理
         case .result:
             ResultView(
-                score: 85,
+                score: score,
                 trajectory: trajectory,
                 onRetry: {
                     gameState = .tracking
