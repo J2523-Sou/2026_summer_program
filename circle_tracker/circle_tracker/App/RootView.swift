@@ -13,15 +13,18 @@ struct RootView: View {
     @State private var gameState: GameState = .home
     @State private var trajectory: [SIMD3<Float>] = []
     
+    // 各Viewを呼び出し
     var body: some View {
         switch gameState {
         
         // homeにてonStartが渡された場合の処理
         // trackingへ移動する
         case .home:
-            HomeView {
-                gameState = .tracking
-            }
+            HomeView(
+                onStart: {
+                    gameState = .tracking
+                }
+            )
         
         // trackingにてonFinishが渡された場合の処理
         // resultへ移動する

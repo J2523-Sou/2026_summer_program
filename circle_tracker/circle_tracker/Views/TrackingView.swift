@@ -11,6 +11,7 @@ struct TrackingView: View {
     
     let onFinish: ([SIMD3<Float>]) -> Void
     
+    // ARTrackingManagerのインスタンスを生成
     @StateObject private var tracker = ARTrackingManager()
     
     var body: some View {
@@ -55,6 +56,8 @@ struct TrackingView: View {
                 onFinish(tracker.trajectory)
             }
         }
+        
+        // Viewが表示されたら追跡を開始する
         .onAppear {
             tracker.start()
         }
