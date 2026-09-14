@@ -11,21 +11,26 @@ struct RootView: View {
     
     // 起動時の画面をhomeに設定．
     @State private var gameState: GameState = .home
+    @State private var trajectory: [SIMD3<Float>] = []
     
+    // 各Viewを呼び出し
     var body: some View {
         switch gameState {
         
         // homeにてonStartが渡された場合の処理
         // trackingへ移動する
         case .home:
-            HomeView {
-                gameState = .tracking
-            }
+            HomeView(
+                onStart: {
+                    gameState = .tracking
+                }
+            )
         
         // trackingにてonFinishが渡された場合の処理
         // resultへ移動する
         case .tracking:
-            TrackingView {
+            TrackingView { points in
+                trajectory = points
                 gameState = .result
             }
             
@@ -33,6 +38,7 @@ struct RootView: View {
         case .result:
             ResultView(
                 score: 85,
+                trajectory: trajectory,
                 onRetry: {
                     gameState = .tracking
                 },

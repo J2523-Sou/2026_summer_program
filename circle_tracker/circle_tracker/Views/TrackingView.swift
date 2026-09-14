@@ -9,8 +9,9 @@ import SwiftUI
 
 struct TrackingView: View {
     
-    let onFinish: () -> Void
+    let onFinish: ([SIMD3<Float>]) -> Void
     
+    // ARTrackingManagerのインスタンスを生成
     @StateObject private var tracker = ARTrackingManager()
     
     var body: some View {
@@ -38,10 +39,25 @@ struct TrackingView: View {
                 ProgressView(value: tracker.calibrationProgress)
             }
             
+            Text("Points: \(tracker.recordedPointCount)")
+            
+            if tracker.isRecording {
+                Button("STOP RECORDING") {
+                    tracker.stopRecording()
+                }
+            } else {
+                Button("RECORD") {
+                    tracker.startRecording()
+                }
+            }
+            
             Button("FINISH") {
-                onFinish()
+                tracker.stopRecording()
+                onFinish(tracker.trajectory)
             }
         }
+        
+        // Viewが表示されたら追跡を開始する
         .onAppear {
             tracker.start()
         }
@@ -52,7 +68,7 @@ struct TrackingView: View {
 }
 
 #Preview {
-    TrackingView {
-        print("FINISH")
+    TrackingView { points in
+        print(points.count)
     }
 }
