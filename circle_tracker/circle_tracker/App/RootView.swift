@@ -1,51 +1,59 @@
-//
-//  RootView.swift
-//  CircleTrackerApp
-//
-//  Created by 髙橋湊 on 9/13/26.
-//
-
 import SwiftUI
 
 struct RootView: View {
     
-    // 起動時の画面をhomeに設定．
+    // 現在表示している画面
     @State private var gameState: GameState = .home
+    
+    // 計測した3次元軌跡
     @State private var trajectory: [SIMD3<Float>] = []
     
-    // 各Viewを呼び出し
+    // 円の解析結果
+    @State private var analysisResult: CircleAnalysisResult?
+    
     var body: some View {
-        switch gameState {
         
-        // homeにてonStartが渡された場合の処理
-        // trackingへ移動する
+        switch gameState {
+            
         case .home:
             HomeView(
                 onStart: {
                     gameState = .tracking
                 }
             )
-        
-        // trackingにてonFinishが渡された場合の処理
-        // resultへ移動する
+            
         case .tracking:
             TrackingView { points in
+                
+                // 計測結果を保存
                 trajectory = points
+                
+                // 点群を解析
+                analysisResult = CircleAnalyzer.analyze(
+                    points: points
+                )
+                
+                // Resultへ切り替え
                 gameState = .result
             }
             
-        // resultでの処理
         case .result:
-            ResultView(
-                score: 85,
-                trajectory: trajectory,
-                onRetry: {
-                    gameState = .tracking
-                },
-                onHome: {
-                    gameState = .home
-                }
-            )
+            if let analysisResult = analysisResult {
+                
+                ResultView(
+                    result: analysisResult,
+                    trajectory: trajectory,
+                    onRetry: {
+                        gameState = .tracking
+                    },
+                    onHome: {
+                        gameState = .home
+                    }
+                )
+                
+            } else {
+                Text("解析結果がありません")
+            }
         }
     }
 }
