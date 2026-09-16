@@ -7,193 +7,464 @@
 
 import ARKit
 import Combine
+import simd
 
 class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     
-    @Published var x: Float = 0
-    @Published var y: Float = 0
-    @Published var z: Float = 0                             // 生座標データ3つ
-    @Published var speed: Float = 0                         // 移動速度
-    @Published var isStill: Bool = false                    // 静止中フラグ
-    @Published var calibrationProgress: Float = 0           // 原点補正進行度
-    @Published var isCalibrated: Bool = false               // 原点設定完了フラグ
-    @Published var relativeX: Float = 0
-    @Published var relativeY: Float = 0
-    @Published var relativeZ: Float = 0                     // 原点補正後の座標
-    @Published var isRecording: Bool = false
-    @Published var recordedPointCount: Int = 0
-    @Published private(set) var trajectory: [SIMD3<Float>] = []             // 軌跡
-
+    // MARK: - UIに公開する値
+    // 外部からは読み取り専用とする．また @Published により更新された場合に参照元へ通知する
+    
+    @Published private(set) var x: Float = 0
+    @Published private(set) var y: Float = 0
+    @Published private(set) var z: Float = 0                // 生座標
+    
+    @Published private(set) var relativeX: Float = 0
+    @Published private(set) var relativeY: Float = 0
+    @Published private(set) var relativeZ: Float = 0        // 補正後座標
+    
+    @Published private(set) var speed: Float = 0            // 移動速度
+    @Published private(set) var isStill: Bool = false       // 静止フラグ
+    
+    @Published private(set) var calibrationProgress: Float = 0      // 補正の進行度
+    
+    @Published private(set) var recordedPointCount: Int = 0         // 軌跡データ量
+    @Published private(set) var trajectory: [SIMD3<Float>] = []     // 軌跡
+    
+    @Published private(set) var trackingState: TrackingState = .calibrating
+    
+    
+    // MARK: - ARKit
     
     private let session = ARSession()
-    private var previousPosition: SIMD3<Float>?             // 1フレーム前の位置
-    private var previousTimestamp: TimeInterval?            // 1フレーム前の時刻
-    private let stillnessThreshold: Float = 0.25            // 動作検出閾値
-    private let calibrationDuration: TimeInterval = 3.0
-    private var stillStartTimestamp: TimeInterval?          // 静止開始時刻
-    private var calibrationPositions: [SIMD3<Float>] = []   // 静止中の座標（配列として全て保存）
-    private var origin: SIMD3<Float>?                       // 補正後の原点
-    private var calibrationCompleted = false                // 補正完了フラグ
     
-    // 初期化
+    private var previousPosition: SIMD3<Float>?
+    private var previousTimestamp: TimeInterval?
+    
+    
+    // MARK: - 判定条件
+    
+    // これ未満なら静止とみなす
+    private let stillnessThreshold: Float = 0.25
+    
+    // これを超えたら描画開始とみなす
+    private let movementStartThreshold: Float = 0.35
+    
+    // 最初に必要な静止時間
+    private let calibrationDuration: TimeInterval = 3.0
+    
+    // 描画終了とみなす静止時間
+    private let finishStillDuration: TimeInterval = 2.0
+    
+    
+    // MARK: - 静止時間管理
+    
+    private var stillStartTimestamp: TimeInterval?
+    
+    
+    // MARK: - 原点補正
+    
+    private var calibrationPositions: [SIMD3<Float>] = []
+    
+    private var origin: SIMD3<Float>?
+    
+    
+    // MARK: - 初期化
+    
     override init() {
         super.init()
+        
         session.delegate = self
+        
+        // ARSessionDelegateをMain Queueで処理する
+        // @Publishedの変更も同じスレッドで扱える
+        session.delegateQueue = .main
     }
     
-    // 検出開始
+    
+    // MARK: - ARKit開始
+    
     func start() {
+        
+        reset()
+        
         let configuration = ARWorldTrackingConfiguration()
-        session.run(configuration)
+        
+        session.run(
+            configuration,
+            options: [
+                .resetTracking,
+                .removeExistingAnchors
+            ]
+        )
     }
     
-    // 検出停止
+    
+    // MARK: - ARKit停止
+    
     func stop() {
         session.pause()
     }
     
-    // 原点補正
+    
+    // MARK: - リセット
+    
+    func reset() {
+        
+        trackingState = .calibrating
+        
+        previousPosition = nil
+        previousTimestamp = nil
+        
+        stillStartTimestamp = nil
+        
+        calibrationPositions.removeAll()
+        origin = nil
+        
+        trajectory.removeAll()
+        recordedPointCount = 0
+        
+        calibrationProgress = 0
+        
+        speed = 0
+        isStill = false
+        
+        relativeX = 0
+        relativeY = 0
+        relativeZ = 0
+    }
+    
+    
+    // MARK: - 主処理
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        
+        // -----------------------------------
+        // 1. 現在位置を取得
+        // -----------------------------------
+        
+        let transform = frame.camera.transform
+        let translation = transform.columns.3
+        
+        let currentPosition = SIMD3<Float>(
+            translation.x,
+            translation.y,
+            translation.z
+        )
+        
+        let currentTimestamp = frame.timestamp
+        
+        
+        // 生座標を更新
+        x = currentPosition.x
+        y = currentPosition.y
+        z = currentPosition.z
+        
+        
+        // -----------------------------------
+        // 2. 原点からの相対座標を計算
+        // -----------------------------------
+        
+        if let origin {
+            
+            let relativePosition =
+            currentPosition - origin
+            
+            relativeX = relativePosition.x
+            relativeY = relativePosition.y
+            relativeZ = relativePosition.z
+        }
+        
+        
+        // -----------------------------------
+        // 3. 前フレームがなければ終了
+        // -----------------------------------
+        
+        guard
+            let previousPosition,
+            let previousTimestamp
+        else {
+            
+            self.previousPosition = currentPosition
+            self.previousTimestamp = currentTimestamp
+            
+            return
+        }
+        
+        
+        // -----------------------------------
+        // 4. 速度を計算
+        // -----------------------------------
+        
+        let deltaTime =
+        currentTimestamp - previousTimestamp
+        
+        guard deltaTime > 0 else {
+            return
+        }
+        
+        let distance =
+        simd_distance(
+            currentPosition,
+            previousPosition
+        )
+        
+        let currentSpeed =
+        distance / Float(deltaTime)
+        
+        let currentIsStill =
+        currentSpeed < stillnessThreshold
+        
+        speed = currentSpeed
+        isStill = currentIsStill
+        
+        
+        // -----------------------------------
+        // 5. 状態ごとの処理
+        // -----------------------------------
+        
+        switch trackingState {
+            
+        case .calibrating:
+            
+            handleCalibration(
+                position: currentPosition,
+                timestamp: currentTimestamp,
+                isStill: currentIsStill
+            )
+            
+            
+        case .ready:
+            
+            handleReady(
+                speed: currentSpeed
+            )
+            
+            
+        case .recording:
+            
+            handleRecording(
+                position: currentPosition,
+                timestamp: currentTimestamp,
+                isStill: currentIsStill
+            )
+            
+            
+        case .completed:
+            
+            break
+        }
+        
+        
+        // -----------------------------------
+        // 6. 次フレーム用に保存
+        // -----------------------------------
+        
+        self.previousPosition = currentPosition
+        self.previousTimestamp = currentTimestamp
+    }
+    
+    
+    // MARK: - 補正処理
+    
+    private func handleCalibration(
+        position: SIMD3<Float>,
+        timestamp: TimeInterval,
+        isStill: Bool
+    ) {
+        
+        // 動いていた場合
+        if !isStill {
+            
+            stillStartTimestamp = nil
+            calibrationPositions.removeAll()
+            
+            calibrationProgress = 0
+            
+            return
+        }
+        
+        
+        // 静止を開始した瞬間
+        if stillStartTimestamp == nil {
+            
+            stillStartTimestamp = timestamp
+            
+            calibrationPositions.removeAll()
+        }
+        
+        
+        // 静止中の位置を保存
+        calibrationPositions.append(position)
+        
+        
+        guard let startTimestamp =
+                stillStartTimestamp
+        else {
+            return
+        }
+        
+        
+        // 静止時間
+        let elapsed =
+        timestamp - startTimestamp
+        
+        
+        // 0.0 ～ 1.0
+        calibrationProgress =
+        min(
+            Float(
+                elapsed / calibrationDuration
+            ),
+            1.0
+        )
+        
+        
+        // まだ3秒経っていない
+        guard elapsed >= calibrationDuration else {
+            return
+        }
+        
+        
+        // 原点を設定
+        setOrigin()
+        
+        
+        // 次の状態へ
+        stillStartTimestamp = nil
+        
+        trackingState = .ready
+    }
+    
+    
+    // MARK: - Ready
+    
+    private func handleReady(
+        speed: Float
+    ) {
+        
+        // 十分に動いていなければ待機
+        guard speed > movementStartThreshold else {
+            return
+        }
+        
+        
+        // 新しい軌跡を開始
+        trajectory.removeAll()
+        recordedPointCount = 0
+        
+        stillStartTimestamp = nil
+        
+        trackingState = .recording
+    }
+    
+    
+    // MARK: - 軌跡の記録
+    
+    private func handleRecording(
+        position: SIMD3<Float>,
+        timestamp: TimeInterval,
+        isStill: Bool
+    ) {
+        
+        // ----------------------------
+        // 軌跡を記録
+        // ----------------------------
+        
+        if let origin {
+            
+            let relativePosition =
+            position - origin
+            
+            trajectory.append(relativePosition)
+            
+            recordedPointCount =
+            trajectory.count
+        }
+        
+        
+        // ----------------------------
+        // 動いている
+        // ----------------------------
+        
+        if !isStill {
+            
+            // 静止判定をリセット
+            stillStartTimestamp = nil
+            
+            return
+        }
+        
+        
+        // ----------------------------
+        // 静止を開始
+        // ----------------------------
+        
+        if stillStartTimestamp == nil {
+            
+            stillStartTimestamp =
+            timestamp
+        }
+        
+        
+        guard let startTimestamp =
+                stillStartTimestamp
+        else {
+            return
+        }
+        
+        
+        let elapsed =
+        timestamp - startTimestamp
+        
+        
+        // まだ1秒静止していない
+        guard elapsed >= finishStillDuration else {
+            return
+        }
+        
+        
+        // ----------------------------
+        // 記録完了
+        // ----------------------------
+        
+        stillStartTimestamp = nil
+        
+        trackingState = .completed
+    }
+    
+    
+    // MARK: - 原点設定
+    
     private func setOrigin() {
         
         guard !calibrationPositions.isEmpty else {
             return
         }
         
-        var sum = SIMD3<Float>(0, 0, 0)
         
-        // 静止中の全座標の重心を算出，originへ
+        var sum =
+        SIMD3<Float>(
+            0,
+            0,
+            0
+        )
+        
+        
         for position in calibrationPositions {
             sum += position
         }
         
-        origin = sum / Float(calibrationPositions.count)
         
-        calibrationCompleted = true
-        
-        DispatchQueue.main.async {
-            self.calibrationProgress = 1.0
-            self.isCalibrated = true
-        }
-    }
-    
-    // 記録開始
-    func startRecording() {
-        trajectory.removeAll()
-        isRecording = true
-        recordedPointCount = 0
-    }
-    
-    // 記録停止
-    func stopRecording() {
-        isRecording = false
-    }
-    
-    // 主処理（新たなフレームを検出するたびに呼び出される）
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
-        let transform = frame.camera.transform
-        let position = transform.columns.3
-        
-        // 現在の位置をcurrentPositionへ格納
-        let currentPosition = SIMD3<Float>(
-            position.x,
-            position.y,
-            position.z
+        // 静止中に取得した座標の平均
+        origin =
+        sum
+        / Float(
+            calibrationPositions.count
         )
         
-        let currentTimestamp = frame.timestamp
         
-        // 速度計算部
-        if let previousPosition = previousPosition,
-           let previousTimestamp = previousTimestamp {
-            
-            // 変化量
-            let dx = currentPosition.x - previousPosition.x
-            let dy = currentPosition.y - previousPosition.y
-            let dz = currentPosition.z - previousPosition.z
-            
-            // 空間ベクトルの距離
-            let distance = sqrt(dx * dx + dy * dy + dz * dz)
-            
-            // 時間変化
-            let deltaTime = currentTimestamp - previousTimestamp
-            
-            // もしも前フレームから時間差があれば
-            if deltaTime > 0 {
-                // currentSpeedに速度を格納
-                let currentSpeed = distance / Float(deltaTime)
-                
-                // 動いているか？
-                let currentIsStill = currentSpeed < stillnessThreshold
-                
-                // setOriginの呼び出し
-                // 静止状態が閾値以上続いた場合，検出した座標の平均を原点とする．
-                if !calibrationCompleted {
-                    
-                    if currentIsStill {
-                        
-                        if stillStartTimestamp == nil {
-                            stillStartTimestamp = currentTimestamp
-                            calibrationPositions.removeAll()
-                        }
-                        
-                        calibrationPositions.append(currentPosition)
-                        
-                        let elapsed = currentTimestamp - stillStartTimestamp!
-                        let progress = min(Float(elapsed / calibrationDuration), 1.0)
-                        
-                        DispatchQueue.main.async {
-                            self.calibrationProgress = progress
-                        }
-                        
-                        if elapsed >= calibrationDuration {
-                            setOrigin()
-                        }
-                        
-                    } else {
-                        stillStartTimestamp = nil
-                        calibrationPositions.removeAll()
-                        
-                        DispatchQueue.main.async {
-                            self.calibrationProgress = 0
-                        }
-                    }
-                }
-                
-                DispatchQueue.main.async {
-                    self.speed = currentSpeed
-                    self.isStill = currentIsStill
-                }
-            }
-        }
+        calibrationProgress = 1.0
         
-        // 補正後の座標を保存
-        if let origin = origin {
-            let relativePosition = currentPosition - origin
-            
-            if isRecording {
-                trajectory.append(relativePosition)
-                
-                DispatchQueue.main.async {
-                    self.recordedPointCount = self.trajectory.count
-                }
-            }
-            
-            DispatchQueue.main.async {
-                self.relativeX = relativePosition.x
-                self.relativeY = relativePosition.y
-                self.relativeZ = relativePosition.z
-            }
-        }
-        
-        // previousへ現在のデータを格納．
-        previousPosition = currentPosition
-        previousTimestamp = currentTimestamp
-        
-        DispatchQueue.main.async {
-            self.x = position.x
-            self.y = position.y
-            self.z = position.z
-        }
+        calibrationPositions.removeAll()
     }
 }

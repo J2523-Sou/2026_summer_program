@@ -26,33 +26,37 @@ struct TrackingView: View {
             Text(String(format: "Speed: %.4f m/s", tracker.speed))
             Text(tracker.isStill ? "静止中" : "移動中")
             
-            if tracker.isCalibrated {
-                Text("原点設定完了")
+            switch tracker.trackingState {
                 
-                Text(String(format: "X: %.3f m", tracker.relativeX))
-                Text(String(format: "Y: %.3f m", tracker.relativeY))
-                Text(String(format: "Z: %.3f m", tracker.relativeZ))
-
-            } else {
+            case .calibrating:
                 Text("3秒間静止してください")
                 
-                ProgressView(value: tracker.calibrationProgress)
+            case .ready:
+                Text("準備完了")
+                Text("動かすと記録を開始します")
+                
+            case .recording:
+                Text("● RECORDING")
+                Text("Points: \(tracker.recordedPointCount)")
+                
+            case .completed:
+                Text("記録完了")
             }
             
-            Text("Points: \(tracker.recordedPointCount)")
-            
-            if tracker.isRecording {
-                Button("STOP RECORDING") {
-                    tracker.stopRecording()
-                }
-            } else {
-                Button("RECORD") {
-                    tracker.startRecording()
+            if tracker.trackingState == .recording ||
+                tracker.trackingState == .completed {
+                Button("RESTART") {
+                    tracker.reset()
                 }
             }
+//            else {
+//                Button("RECORD") {
+//                    tracker.startRecording()
+//                }
+//            }
             
             Button("FINISH") {
-                tracker.stopRecording()
+                tracker.stop()
                 onFinish(tracker.trajectory)
             }
         }
