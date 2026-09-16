@@ -9,6 +9,8 @@ import SwiftUI
 
 struct TrackingView: View {
     
+    @State private var haptics = HapticManager()
+    
     let onFinish: ([SIMD3<Float>]) -> Void
     
     // ARTrackingManagerのインスタンスを生成
@@ -68,7 +70,12 @@ struct TrackingView: View {
         .onDisappear {
             tracker.stop()
         }
+        .onChange(of: tracker.trackingState) { _, _ in
+            haptics.pulse()
+        }
+        
     }
+    
 }
 
 #Preview {
