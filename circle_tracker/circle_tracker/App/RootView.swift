@@ -19,6 +19,9 @@ struct RootView: View {
             HomeView(
                 onStart: {
                     gameState = .tracking
+                },
+                onDrawingStart: {
+                    gameState = .drawing
                 }
             )
             
@@ -34,6 +37,16 @@ struct RootView: View {
                 )
                 
                 // Resultへ切り替え
+                gameState = .result
+            }
+        
+        case .drawing:
+            DrawingView { points in
+                trajectory = points
+                analysisResult = CircleAnalyzer.analyze(
+                    points: points
+                )
+                
                 gameState = .result
             }
             
