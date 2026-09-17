@@ -82,7 +82,7 @@ struct Trajectory3DView: View {
                     ]
                 )
                 
-                sphere.position = point
+                sphere.position = point * displayScale
                 root.addChild(sphere)
             }
             
@@ -111,13 +111,11 @@ struct Trajectory3DView: View {
                 root.orientation =
                 yawRotation * pitchRotation
                 
-                // 自動倍率 × ユーザーのズーム倍率
-                let scale = displayScale * zoom
                 
                 root.scale = [
-                    scale,
-                    scale,
-                    scale
+                    zoom,
+                    zoom,
+                    zoom
                 ]
             }
         }

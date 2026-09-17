@@ -11,6 +11,7 @@ struct HomeView: View {
     
     //引数なし，戻り値なしの処理を外部から受け取る
     let onStart: () -> Void
+    let onDrawingStart: () -> Void
     
     var body: some View {
         VStack {
@@ -21,16 +22,22 @@ struct HomeView: View {
             Text("できるだけ綺麗な円を描こう")
                 .font(.headline)
                 
-            Button("START") {
+            Button("3D START") {
                 onStart()
             }
+            
+            Button("2D START") {
+                onDrawingStart()
+            }
+            
         }
         .padding()
     }
 }
 
 #Preview {
-    HomeView() {
-        print("START")
-    }
+    HomeView(
+        onStart: {},
+        onDrawingStart: {}
+    )
 }
