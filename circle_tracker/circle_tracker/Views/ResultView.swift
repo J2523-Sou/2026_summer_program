@@ -40,12 +40,26 @@ struct ResultView: View {
             Trajectory3DView(points: trajectory)
                 .frame(height: 350)
             
-            Button("RETRY") {
-                onRetry()
-            }
-            
-            Button("HOME") {
-                onHome()
+            if #available(iOS 26.0, *) {
+                Button("RETRY") {
+                    onRetry()
+                }
+                .buttonStyle(.glassProminent)
+
+                Button("HOME") {
+                    onHome()
+                }
+                .buttonStyle(.glass)
+            } else {
+                Button("RETRY") {
+                    onRetry()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("HOME") {
+                    onHome()
+                }
+                .buttonStyle(.bordered)
             }
         }
         .padding()

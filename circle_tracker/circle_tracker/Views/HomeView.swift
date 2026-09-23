@@ -15,20 +15,43 @@ struct HomeView: View {
     
     var body: some View {
         VStack {
-            Text("Perfect Circle")
-                .font(.largeTitle)
-                .bold()
+            
+            Image(systemName: "pencil.and.outline")
+                .font(.system(size: 100))
+            
+//            Text("Perfect Circle")
+//                .font(.largeTitle)
+//                .bold()
                 
             Text("できるだけ綺麗な円を描こう")
                 .font(.headline)
+                .padding()
+            
+            // LiquidGlass対応機種なら
+            if #available(iOS 26.0, *) {
+                Button("3D START") {
+                    onStart()
+                }
+                .padding()
+                .buttonStyle(.glassProminent)   // 強調
                 
-            Button("3D START") {
-                onStart()
+                Button("2D START") {
+                    onDrawingStart()
+                }
+                .buttonStyle(.glass)
+            } else {
+                Button("3D START") {
+                    onStart()
+                }
+                .padding()
+                .buttonStyle(.borderedProminent)    // 強調
+                
+                Button("2D START") {
+                    onDrawingStart()
+                }
+                .buttonStyle(.bordered)
             }
             
-            Button("2D START") {
-                onDrawingStart()
-            }
             
         }
         .padding()

@@ -76,15 +76,29 @@ struct DrawingView: View {
             
             
             HStack {
-                
-                Button("RESET") {
-                    points.removeAll()
+                if #available(iOS 26.0, *) {
+                    Button("RESET") {
+                        points.removeAll()
+                    }
+                    .buttonStyle(.glass)
+
+                    Button("FINISH") {
+                        onFinish(points)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .disabled(points.count < 10)
+                } else {
+                    Button("RESET") {
+                        points.removeAll()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("FINISH") {
+                        onFinish(points)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(points.count < 10)
                 }
-                
-                Button("FINISH") {
-                    onFinish(points)
-                }
-                .disabled(points.count < 10)
             }
         }
         .padding()
