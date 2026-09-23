@@ -32,6 +32,8 @@ struct TrackingView: View {
                 
             case .calibrating:
                 Text("3秒間静止してください")
+                ProgressView(value: tracker.calibrationProgress)
+                    .progressViewStyle(.linear)
                 
             case .ready:
                 Text("準備完了")
@@ -45,22 +47,38 @@ struct TrackingView: View {
                 Text("記録完了")
             }
             
-            if tracker.trackingState == .recording ||
-                tracker.trackingState == .completed {
-                Button("RESTART") {
-                    tracker.reset()
+            if #available(iOS 26.0, *) {
+                if tracker.trackingState == .recording ||
+                    tracker.trackingState == .completed {
+                    Button("RESTART") {
+                        tracker.reset()
+                    }
+                    .buttonStyle(.glass)
                 }
+                Button("FINISH") {
+                    tracker.stop()
+                    onFinish(tracker.trajectory)
+                }
+                .buttonStyle(.glassProminent)
+            } else {
+                if tracker.trackingState == .recording ||
+                    tracker.trackingState == .completed {
+                    Button("RESTART") {
+                        tracker.reset()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                Button("FINISH") {
+                    tracker.stop()
+                    onFinish(tracker.trajectory)
+                }
+                .buttonStyle(.borderedProminent)
             }
 //            else {
 //                Button("RECORD") {
 //                    tracker.startRecording()
 //                }
 //            }
-            
-            Button("FINISH") {
-                tracker.stop()
-                onFinish(tracker.trajectory)
-            }
         }
         
         // Viewが表示されたら追跡を開始する
