@@ -41,20 +41,21 @@ struct ResultView: View {
                 .frame(height: 350)
             
             if #available(iOS 26.0, *) {
-                Button("RETRY") {
-                    onRetry()
-                }
-                .buttonStyle(.glassProminent)
+                // リトライ後の推移先指定がまだ完了していないので一旦コメントアウト
+//                Button("RETRY") {
+//                    onRetry()
+//                }
+//                .buttonStyle(.glassProminent)
 
                 Button("HOME") {
                     onHome()
                 }
                 .buttonStyle(.glass)
             } else {
-                Button("RETRY") {
-                    onRetry()
-                }
-                .buttonStyle(.borderedProminent)
+//                Button("RETRY") {
+//                    onRetry()
+//                }
+//                .buttonStyle(.borderedProminent)
 
                 Button("HOME") {
                     onHome()
