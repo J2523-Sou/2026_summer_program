@@ -5,7 +5,8 @@ struct ResultView: View {
     let result: CircleAnalysisResult
     let trajectory: [SIMD3<Float>]
     
-    let onRetry: () -> Void
+    let on2DRetry: () -> Void
+    let on3DRetry: () -> Void
     let onHome: () -> Void
     
     var body: some View {
@@ -41,22 +42,30 @@ struct ResultView: View {
                 .frame(height: 350)
             
             if #available(iOS 26.0, *) {
-                // リトライ後の推移先指定がまだ完了していないので一旦コメントアウト
-//                Button("RETRY") {
-//                    onRetry()
-//                }
-//                .buttonStyle(.glassProminent)
+                Button("RETRY to 2D") {
+                    on2DRetry()
+                }
+                .buttonStyle(.glassProminent)
+                
+                Button("RETRY to 3D") {
+                    on3DRetry()
+                }
+                .buttonStyle(.glassProminent)
 
                 Button("HOME") {
                     onHome()
                 }
                 .buttonStyle(.glass)
             } else {
-//                Button("RETRY") {
-//                    onRetry()
-//                }
-//                .buttonStyle(.borderedProminent)
-
+                Button("RETRY to 2D") {
+                    on2DRetry()
+                }
+                .buttonStyle(.glassProminent)
+                
+                Button("RETRY to 3D") {
+                    on3DRetry()
+                }
+                .buttonStyle(.glassProminent)
                 Button("HOME") {
                     onHome()
                 }

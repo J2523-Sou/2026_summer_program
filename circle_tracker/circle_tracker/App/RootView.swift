@@ -56,7 +56,10 @@ struct RootView: View {
                 ResultView(
                     result: analysisResult,
                     trajectory: trajectory,
-                    onRetry: {
+                    on2DRetry: {
+                        gameState = .drawing
+                    },
+                    on3DRetry: {
                         gameState = .tracking
                     },
                     onHome: {
