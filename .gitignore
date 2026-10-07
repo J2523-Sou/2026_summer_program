@@ -8,5 +8,11 @@ DerivedData/
 
 .build/
 
+# VS Code / SweetPad machine-specific settings and generated build server config
+.vscode/settings.json
+**/.vscode/settings.json
+buildServer.json
+**/buildServer.json
+
 # Backup of the former nested repository
 circle_tracker/.git-backup/
