@@ -39,7 +39,7 @@ struct ResultView: View {
             Text("Points: \(result.pointCount)")
             
             Trajectory3DView(points: trajectory)
-                .frame(height: 350)
+                .frame(height: 300)
             
             if #available(iOS 26.0, *) {
                 Button("RETRY to 2D") {

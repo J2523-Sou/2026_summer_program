@@ -1,0 +1,3 @@
+project = "circle_tracker/CircleTrackerApp.xcodeproj"
+scheme = "CircleTrackerApp"
+configuration = "Debug"

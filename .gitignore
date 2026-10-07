@@ -8,5 +8,9 @@ DerivedData/
 
 .build/
 
+# SweetPad-generated build server configs (contain machine-specific paths)
+buildServer.json
+**/buildServer.json
+
 # Backup of the former nested repository
 circle_tracker/.git-backup/
