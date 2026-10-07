@@ -12,5 +12,8 @@ DerivedData/
 buildServer.json
 **/buildServer.json
 
+# The repository root is the VS Code workspace; ignore nested local overrides
+circle_tracker/.vscode/settings.json
+
 # Backup of the former nested repository
 circle_tracker/.git-backup/
