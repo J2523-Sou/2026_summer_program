@@ -35,8 +35,7 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     
     // MARK: - ARKit
     
-    // AR PREVIEWでもTracking時と同じARSessionを利用する
-    let session = ARSession()
+    private let session = ARSession()
     
     private var previousPosition: SIMD3<Float>?
     private var previousTimestamp: TimeInterval?
@@ -66,8 +65,7 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     
     private var calibrationPositions: [SIMD3<Float>] = []
     
-    // 記録時の原点をAR PREVIEWのAnchor位置として利用する
-    private(set) var origin: SIMD3<Float>?
+    private var origin: SIMD3<Float>?
     
     
     // MARK: - 初期化
@@ -88,10 +86,6 @@ class ARTrackingManager: NSObject, ObservableObject, ARSessionDelegate {
     func start() {
         
         reset()
-
-        // ARViewがセッションを使用した後もTracking側のDelegateへ戻す
-        session.delegate = self
-        session.delegateQueue = .main
         
         let configuration = ARWorldTrackingConfiguration()
         
