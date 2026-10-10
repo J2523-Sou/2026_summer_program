@@ -7,6 +7,7 @@ struct ResultView: View {
     
     let on2DRetry: () -> Void
     let on3DRetry: () -> Void
+    let onAR: () -> Void
     let onHome: () -> Void
     
     var body: some View {
@@ -37,35 +38,48 @@ struct ResultView: View {
             )
             
             Text("Points: \(result.pointCount)")
+
+            Button("AR") {
+                onAR()
+            }
+            .buttonStyle(.borderedProminent)
             
             Trajectory3DView(points: trajectory)
                 .frame(height: 300)
             
             if #available(iOS 26.0, *) {
-                Button("RETRY to 2D") {
-                    on2DRetry()
-                }
-                .buttonStyle(.glassProminent)
-                
-                Button("RETRY to 3D") {
-                    on3DRetry()
-                }
-                .buttonStyle(.glassProminent)
 
+                HStack(spacing: 20) {
+                    Button("RETRY to 2D") {
+                    on2DRetry()
+                    }
+                    .buttonStyle(.glassProminent)
+                
+                    Button("RETRY to 3D") {
+                        on3DRetry()
+                    }
+                    .buttonStyle(.glassProminent)
+                }
+                
                 Button("HOME") {
                     onHome()
                 }
                 .buttonStyle(.glass)
-            } else {
-                Button("RETRY to 2D") {
-                    on2DRetry()
-                }
-                .buttonStyle(.glassProminent)
                 
-                Button("RETRY to 3D") {
-                    on3DRetry()
+            } else {
+
+                HStack(spacing:20) {
+                    Button("RETRY to 2D") {
+                        on2DRetry()
+                    }
+                    .buttonStyle(.borderedProminent)
+                
+                    Button("RETRY to 3D") {
+                        on3DRetry()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.glassProminent)
+                
                 Button("HOME") {
                     onHome()
                 }

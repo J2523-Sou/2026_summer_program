@@ -6,45 +6,19 @@
 //
 
 import SwiftUI
-import ARKit
-import RealityKit
 import UIKit
 
 struct TrackingView: View {
     
     @State private var haptics = HapticManager()
     
+    @ObservedObject var tracker: ARTrackingManager
+
     let onFinish: ([SIMD3<Float>]) -> Void
-    
-    // ARTrackingManagerのインスタンスを生成
-    @StateObject private var tracker = ARTrackingManager()
 
-    // 記録完了後にAR表示へ切り替える
-    @State private var isARPreviewPresented = false
-    
     var body: some View {
-        Group {
-            if isARPreviewPresented {
-                ZStack(alignment: .bottom) {
-                    // RealityKitが管理するARSessionでカメラ映像と結果を描画する
-                    ARTrajectoryPreview(
-                        trajectory: tracker.trajectory
-                    )
-                    .ignoresSafeArea()
-
-                    HStack(spacing: 12) {
-                        previewResultButton
-                        previewResetButton
-                    }
-                    .padding()
-                }
-            } else {
-                trackingControls
-            }
-        }
+        trackingControls
         .onAppear {
-            // RETRY時は前回のAR PREVIEW状態を引き継がない
-            isARPreviewPresented = false
             tracker.start()
         }
         .onDisappear {
@@ -86,24 +60,13 @@ struct TrackingView: View {
                 Text("記録完了")
             }
 
-            if tracker.trackingState == .completed {
-                Button("AR PREVIEW") {
-                    // Tracking用セッションを停止してからプレビュー用セッションへ切り替える
-                    tracker.stop()
-                    isARPreviewPresented = true
-                }
-                .buttonStyle(.borderedProminent)
-            }
-
             if #available(iOS 26.0, *) {
-                if tracker.trackingState == .recording ||
-                    tracker.trackingState == .completed {
+                if tracker.trackingState == .recording {
                     resetButton
                 }
                 finishButton.buttonStyle(.glassProminent)
             } else {
-                if tracker.trackingState == .recording ||
-                    tracker.trackingState == .completed {
+                if tracker.trackingState == .recording {
                     resetButton
                 }
                 finishButton.buttonStyle(.borderedProminent)
@@ -112,7 +75,7 @@ struct TrackingView: View {
     }
 
     private var finishButton: some View {
-        Button("FINISH") {
+        Button("END") {
             tracker.stop()
             onFinish(tracker.trajectory)
         }
@@ -124,57 +87,10 @@ struct TrackingView: View {
         }
     }
 
-    private var previewResetButton: some View {
-        Button("RESTART") {
-            isARPreviewPresented = false
-            // ARViewが使用した後も新しい記録を開始できるようにする
-            tracker.start()
-        }
-    }
-
-    private var previewResultButton: some View {
-        Button("RESULT") {
-            tracker.stop()
-            onFinish(tracker.trajectory)
-        }
-        .buttonStyle(.borderedProminent)
-    }
-
-}
-
-// 記録した相対座標をプレビュー開始位置を原点としてAR空間へ表示する
-private struct ARTrajectoryPreview: UIViewRepresentable {
-    let trajectory: [SIMD3<Float>]
-
-    func makeUIView(context: Context) -> ARView {
-        let arView = ARView(
-            frame: .zero,
-            cameraMode: .ar,
-            automaticallyConfigureSession: true
-        )
-
-        // 軌跡は記録時の原点からの相対座標なので、プレビュー開始位置を原点にする
-        let anchor = AnchorEntity(world: .zero)
-        let material = SimpleMaterial(color: .cyan, isMetallic: false)
-
-        for point in trajectory {
-            let entity = ModelEntity(
-                mesh: .generateSphere(radius: 0.005),
-                materials: [material]
-            )
-            entity.position = point
-            anchor.addChild(entity)
-        }
-
-        arView.scene.addAnchor(anchor)
-        return arView
-    }
-
-    func updateUIView(_ uiView: ARView, context: Context) {}
 }
 
 #Preview {
-    TrackingView { points in
+    TrackingView(tracker: ARTrackingManager()) { points in
         print(points.count)
     }
 }

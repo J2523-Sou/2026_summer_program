@@ -4,4 +4,5 @@ enum GameState {
     case tracking
     case drawing
     case result
+    case ar
 }

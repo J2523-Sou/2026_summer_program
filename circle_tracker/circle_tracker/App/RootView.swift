@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RootView: View {
+
+    @StateObject private var tracker = ARTrackingManager()
     
     // 現在表示している画面
     @State private var gameState: GameState = .home
@@ -26,7 +28,7 @@ struct RootView: View {
             )
             
         case .tracking:
-            TrackingView { points in
+            TrackingView(tracker: tracker) { points in
                 
                 // 計測結果を保存
                 trajectory = points
@@ -62,6 +64,9 @@ struct RootView: View {
                     on3DRetry: {
                         gameState = .tracking
                     },
+                    onAR: {
+                        gameState = .ar
+                    },
                     onHome: {
                         gameState = .home
                     }
@@ -69,6 +74,22 @@ struct RootView: View {
                 
             } else {
                 Text("解析結果がありません")
+            }
+
+        case .ar:
+            ZStack(alignment: .bottom) {
+                ARTrajectoryPreview(
+                    session: tracker.session,
+                    origin: tracker.origin ?? .zero,
+                    trajectory: trajectory
+                )
+                    .ignoresSafeArea()
+
+                Button("Result") {
+                    gameState = .result
+                }
+                .buttonStyle(.borderedProminent)
+                .padding()
             }
         }
     }
